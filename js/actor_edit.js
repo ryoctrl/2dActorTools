@@ -302,6 +302,9 @@ function actorSelectBoxUpdate() {
                     swapThreshold: 0.65,
                     dragoverBubble: false});
             } else {
+                if(!groupDragula.containers) {
+                    InitializeDragula()
+                }
                 groupDragula.containers.push(actor_component[0]);
             }
             act_switch.append(actor_component);
@@ -487,6 +490,9 @@ function AddPartsBoxGroup(name) {
             dragoverBubble: false,
         });
     } else {
+        if(!actorClipDragula.containers) {
+            InitializeDragula()
+        }
         actorClipDragula.containers.push(div[0]);
     }
     return div;
@@ -670,6 +676,9 @@ async function SetupActorComponent(index, actorName, isSetting=false){
                 dragoverBubble: false
             });
         } else {
+            if(!clipsetDragula.containers) {
+                InitializeDragula()
+            }
             clipsetDragula.containers.push(ul[0]);
         }
 
@@ -1304,6 +1313,9 @@ function SortableCreateActor(groupElm, pullAction=true, onAddFunc=null){
             }
         });
     } else {
+        if(!actorClipDragula.containers) {
+            InitializeDragula()
+        }
         actorClipDragula.containers.push(groupElm);
         addFuncList.push({el:groupElm, func:onAddFunc});
     }
@@ -1777,40 +1789,44 @@ function ImportActor(actorName, index, callback){
     }
 }
 
+function InitializeDragula () {
+    actorClipDragula = dragula({
+        moves: function(el, container, target) {
+            return IsSettingActor;
+        },
+        copy: function (el, source) {
+            return source.classList.contains('actor_parts_container');
+        },
+        accepts: function (el, target) {
+            return !target.classList.contains('actor_parts_container');
+        }
+    }).on('drop', function (el, target, source) {
+        var jqElm = $(el);
+        jqElm.removeAttr('uk-tooltip');
+        jqElm.siblings('[uk-tooltip]').removeAttr('uk-tooltip');
+        for(let i = 0; i < addFuncList.length; i++){
+            if(addFuncList[i].el === target){
+                const evt = {item:el};
+                addFuncList[i].func(evt);
+                break;
+            }
+        }
+    });
+    clipsetDragula = dragula({
+        moves: function(el, container, target) {
+            return IsSettingActor;
+        }
+    });
+    groupDragula = dragula({
+        moves: function(el, container, target) {
+            return !target.classList.contains('actor_thumb') && target.tagName !== 'LABEL' && IsSettingActor;
+        }
+    });
+}
+
 function ActorEditInitialize() {
     if(!OSIsWin){
-        actorClipDragula = dragula({
-			moves: function(el, container, target) {
-                return IsSettingActor;
-            },
-            copy: function (el, source) {
-                return source.classList.contains('actor_parts_container');
-            },
-            accepts: function (el, target) {
-                return !target.classList.contains('actor_parts_container');
-            }
-        }).on('drop', function (el, target, source) {
-            var jqElm = $(el);
-            jqElm.removeAttr('uk-tooltip');
-            jqElm.siblings('[uk-tooltip]').removeAttr('uk-tooltip');
-            for(let i = 0; i < addFuncList.length; i++){
-                if(addFuncList[i].el === target){
-                    const evt = {item:el};
-                    addFuncList[i].func(evt);
-                    break;
-                }
-            }
-        });
-        clipsetDragula = dragula({
-            moves: function(el, container, target) {
-                return IsSettingActor;
-            }
-        });
-        groupDragula = dragula({
-			moves: function(el, container, target) {
-				return !target.classList.contains('actor_thumb') && target.tagName !== 'LABEL' && IsSettingActor;
-			}
-		});
+        InitializeDragula()
     }
 
     let contextmenus = $('.contextmenu');
